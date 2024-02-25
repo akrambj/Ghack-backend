@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Depends, Header
 from Routers.authRouter import authRouter
 from Routers.projectsRouter import projectsRouter
+from Routers.tasksRouter import tasksRouter
 from fastapi.middleware.cors import CORSMiddleware
 from Middlewares.authProtectionMiddlewares import statusProtected
 # Query, Depends, Response, status, HTTPException
