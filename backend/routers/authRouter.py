@@ -54,7 +54,7 @@ async def register_user(request: RegisterRequest):
 
 @authRouter.post("/login", status_code=status.HTTP_201_CREATED)
 async def login_user(request: LoginRequest):
-    #try:
+    try:
         data = request.dict()
 
         result = db.collection("users").where("email", "==", data["email"]).get()
@@ -85,5 +85,5 @@ async def login_user(request: LoginRequest):
             "success" : False,
             "message" : "Invalid credentials"
         }
-    #except Exception as e:
-    #    return {"success" : False, "message" : str(e)}
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}

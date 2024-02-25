@@ -9,3 +9,10 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class ProjectCreationRequest(BaseModel):
+    name : str
+    deadline : str
+
+class UserStatusRequest(BaseModel):
+    projectID : str
