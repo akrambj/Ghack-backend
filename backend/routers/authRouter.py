@@ -30,7 +30,7 @@ async def register_user(request: RegisterRequest):
             "id": str(uuid.uuid4()),
             "firstName": data["firstName"],
             "lastName": data["lastName"],
-            "email": data["email"],
+            "email": data["email"].lower(),
             "password": hashPassword(data["password"])
         }
 
@@ -57,7 +57,7 @@ async def login_user(request: LoginRequest):
     try:
         data = request.dict()
 
-        result = db.collection("users").where("email", "==", data["email"]).get()
+        result = db.collection("users").where("email", "==", data["email"].lower()).get()
 
         if len(result) == 0:
             return {
