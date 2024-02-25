@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from Models.RequestModels import *
 from Middlewares.authProtectionMiddlewares import statusProtected
+from Routers.tasksRouter import tasksRouter
 from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
@@ -9,6 +10,7 @@ import uuid
 
 
 projectsRouter = APIRouter()
+projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
 
 @projectsRouter.get("/", status_code=status.HTTP_201_CREATED)
 async def get(userID: str = Depends(statusProtected)):
@@ -71,6 +73,7 @@ async def createProject(request: ProjectCreationRequest,userID: str = Depends(st
         }
 
         Database.store("projects", projetID, project)
+
 
         return {"success" : True, "message" : "Project created successfully"}
     except Exception as e:
