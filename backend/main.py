@@ -1,6 +1,7 @@
 # from .hashing import Hash
 from fastapi import FastAPI, Depends, Header
 from Routers.authRouter import authRouter
+from Routers.projectsRouter import projectsRouter
 from fastapi.middleware.cors import CORSMiddleware
 from Middlewares.authProtectionMiddlewares import statusProtected
 # Query, Depends, Response, status, HTTPException
@@ -31,6 +32,7 @@ def welcome(user: str = Depends(statusProtected)):
 
 
 app.include_router(authRouter, tags=["auth"], prefix="/auth")
+app.include_router(projectsRouter, tags=["projects"], prefix="/projects")
 
 # Start the server with the following command:
 # uvicorn main:app --reload
