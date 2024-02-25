@@ -9,14 +9,13 @@ import uuid
 
 projectsRouter = APIRouter()
 
-@projectsRouter.get("/")
-def welcome():
-    return "Router working"
-
-@projectsRouter.post("/", status_code=status.HTTP_201_CREATED)
+@projectsRouter.get("/", status_code=status.HTTP_201_CREATED)
 async def get(userID: str = Depends(statusProtected)):
     try:
-        print("Not done yet")
+        # Get all the projects a user is part of
+        projects = db.collection("projects").where("members", "array_contains", userID).get()
+        projects = [project.to_dict() for project in projects]
+        return {"success" : True, "projects" : projects}
 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
@@ -37,6 +36,46 @@ async def createProject(request: ProjectCreationRequest,userID: str = Depends(st
 
         Database.store("projects", projetID, project)
         return {"success" : True, "message" : "Project created successfully"}
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
+
+@projectsRouter.post("/members/{projectID}", status_code=status.HTTP_201_CREATED)
+async def addMember(projectID: str,request: AddMemberRequest ,userID: str = Depends(statusProtected)):
+    try:
+        data = request.dict()
+        user = db.collection("users").where("email", "==", data["email"]).get()
+        if len(user) == 0:
+            return {"success" : False, "message" : "User not found"}
+        user = user[0].to_dict()
+        userID = user["id"]
+        project = Database.read("projects", projectID)
+        if project is None:
+            return {"success" : False, "message" : "Project not found"}
+        if userID in project["members"]:
+            project["members"].remove(userID)
+
+        project["members"].append(userID)
+        if data["status"] == "MANAGER":
+            project["manager"] = userID
+        Database.store("projects", projectID, project)
+        return {"success" : True, "message" : "User added to project"}
+    
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
+
+@projectsRouter.delete("/{projectID}", status_code=status.HTTP_201_CREATED)
+async def createProject(projectID : str,userID: str = Depends(statusProtected)):
+    try:
+        project = Database.read("projects", projectID)
+        if project is None:
+            return {"success" : False, "message" : "Project not found"}
+
+        if userID == project["owner"]:
+            Database.delete("projects", projectID)
+            return {"success" : True, "message" : "Project deleted successfully"}
+        else:
+            return {"success" : False, "message" : "User not authorized to delete project"}
+    
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     

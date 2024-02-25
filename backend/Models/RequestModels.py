@@ -14,5 +14,7 @@ class ProjectCreationRequest(BaseModel):
     name : str
     deadline : str
 
-class UserStatusRequest(BaseModel):
-    projectID : str
+
+class AddMemberRequest(BaseModel):
+    email : str
+    status : str
