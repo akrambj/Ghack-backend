@@ -1,7 +1,8 @@
 # from .hashing import Hash
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Header
 from Routers.authRouter import authRouter
 from fastapi.middleware.cors import CORSMiddleware
+from Middlewares.authProtectionMiddlewares import statusProtected
 # Query, Depends, Response, status, HTTPException
 #from .models import Base
 #from .database import engine, SessionLocal
@@ -25,8 +26,8 @@ app.add_middleware(
 
 
 @app.get('/')
-def welcome():
-    return "Welcome to our backend"
+def welcome(user: str = Depends(statusProtected)):
+    return user
 
 
 app.include_router(authRouter, tags=["auth"], prefix="/auth")

@@ -21,7 +21,10 @@ class Database:
     @staticmethod
     def read(collection , document):
         doc_ref = db.collection(collection).document(document)
-        return doc_ref.get()
+        if doc_ref.get().exists:
+            return doc_ref.get().to_dict()
+        else:
+            return None
  
 
     @staticmethod
