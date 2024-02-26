@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Depends
-from Models.RequestModels import RegisterRequest,LoginRequest
+from Models.Requests.AuthRequestsModels import RegisterRequest,LoginRequest
 from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
 from starlette.responses import JSONResponse

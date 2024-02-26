@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Depends
-from Models.RequestModels import *
+from Models.Requests.ProjectRequestsModels import *
 from Middlewares.authProtectionMiddlewares import statusProtected
 from Routers.tasksRouter import tasksRouter
 from Core.Shared.Database import Database , db
@@ -10,7 +10,7 @@ import uuid
 
 
 projectsRouter = APIRouter()
-projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
+
 
 @projectsRouter.get("/", status_code=status.HTTP_201_CREATED)
 async def get(userID: str = Depends(statusProtected)):
@@ -60,6 +60,8 @@ async def getSingleProject(projectID : str,userID: str = Depends(statusProtected
 async def createProject(request: ProjectCreationRequest,userID: str = Depends(statusProtected)):
     try:
         data = request.dict()
+        if not isDateCorrect(data["deadline"]):
+            raise Exception("Invalid date format")
         projetID = str(uuid.uuid4())
         project = {
             "id": projetID,
@@ -159,3 +161,5 @@ async def removeMember(projectID: str,request: deleteMemberRequest ,userID: str 
     
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+    
+projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
