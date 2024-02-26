@@ -37,3 +37,8 @@ class Database:
     def delete(collection , document):
         event_ref = db.collection(collection).document(document)
         return event_ref.delete()
+    
+    @staticmethod
+    def exists(collection,document):
+        doc_ref = db.collection(collection).document(document)
+        return doc_ref.get().exists
