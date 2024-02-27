@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, Depends
 from Models.Requests.ProjectRequestsModels import *
 from Middlewares.authProtectionMiddlewares import statusProtected
 from Routers.tasksRouter import tasksRouter
+from Routers.storageRouter import storageRouter
 from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
@@ -163,3 +164,4 @@ async def removeMember(projectID: str,request: deleteMemberRequest ,userID: str 
         return {"success" : False, "message" : str(e)}
     
 projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
+projectsRouter.include_router(storageRouter, prefix="/{projectID}/storage", tags=["storage"])
