@@ -29,7 +29,7 @@ async def getProfile(userID: str = Depends(statusProtected)):
 
 @userRouter.put("/profile", status_code=status.HTTP_201_CREATED)
 async def editProfile(request : dict,userID: str = Depends(statusProtected)):
-    #try:
+    try:
         data = request
         user = {}
         if "firstName" in data:
@@ -48,6 +48,6 @@ async def editProfile(request : dict,userID: str = Depends(statusProtected)):
         Database.edit("users", userID, user)
         return {"success" : True, "user" : user }
 
-    #except Exception as e:
-    #    return {"success" : False, "message" : str(e)}
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
 
