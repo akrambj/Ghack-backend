@@ -76,19 +76,30 @@ async def createProject(request: ProjectCreationRequest,userID: str = Depends(st
         projetID = str(uuid.uuid4())
         data["id"] = projetID
         data["status"] = "OWNER"
+        managerID = db.collection("users").where("email", "==", data["managerEmail"].lower()).get()
+        if len(managerID) == 0:
+            return badRequestError("Manager not found")
+        managerID = managerID[0].to_dict()["id"]
+
         project = {
             "id": projetID,
             "name": data["name"],
             "deadline": data["deadline"],
             "owner": userID,
-            "manager": data["managerEmail"],
-            "members": [userID],
+            "manager": managerID,
+            "members": [userID,managerID],
             "virtualRoom": data["virtualRoom"],
             "coordinater": data["coordinater"]
         }
 
+
         Database.store("projects", projetID, project)
 
+        ownerMail = emailFromId(userID)
+
+        project["members"] = [ownerMail]
+        project["owner"] = ownerMail
+        project["manager"] = data["managerEmail"]
 
         return {"success" : True, "message" : "Project created successfully","project":data}
     except Exception as e:
@@ -100,12 +111,12 @@ async def addMember(projectID: str,request: AddMemberRequest ,userID: str = Depe
         data = request.dict()
         user = db.collection("users").where("email", "==", data["email"].lower()).get()
         if len(user) == 0:
-            return {"success" : False, "message" : "User not found"}
+            return badRequestError("User not found")
         user = user[0].to_dict()
         userID = user["id"]
         project = Database.read("projects", projectID)
         if project is None:
-            return {"success" : False, "message" : "Project not found"}
+            return badRequestError("Project not found")
         if userID in project["members"]:
             project["members"].remove(userID)
 
@@ -162,10 +173,10 @@ async def removeMember(projectID: str,request: deleteMemberRequest ,userID: str 
         userID = user["id"]
         project = Database.read("projects", projectID)
         if project is None:
-            return {"success" : False, "message" : "Project not found"}
+            return badRequestError("Project not found")
         if userID in project["members"]:
             if userID == project["owner"]:
-                return {"success" : False, "message" : "Owner cannot be removed from project"}
+                return badRequestError("Owner cannot be removed from project")
             elif userID == project["manager"]:
                 project["manager"] = None
             project["members"].remove(userID)

@@ -8,5 +8,9 @@ class AddTaskRequest(BaseModel):
     deadline : str
     assignee : str
 
+class AddPersonalTaskRequest(BaseModel):
+    name : str
+    deadline : str
+
 class UserUpdateTaskStatusRequest(BaseModel):
     status : str

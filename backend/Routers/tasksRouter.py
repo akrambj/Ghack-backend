@@ -12,7 +12,7 @@ import uuid
 
 tasksRouter = APIRouter()
 
-@tasksRouter.post("/", status_code=status.HTTP_201_CREATED)
+@tasksRouter.post("/add", status_code=status.HTTP_201_CREATED)
 async def addTask(projectID: str,request : AddTaskRequest,userID: str = Depends(statusProtected)):
     try:
         # Check if the user is the manager of the project
@@ -169,6 +169,25 @@ async def managerGetUserTasks(projectID:str,userMail: str,userID: str = Depends(
 
         tasks = [task.to_dict() for task in tasks]
         return {"success" : True, "tasks" : tasks}
+
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
+    
+
+@tasksRouter.post("/", status_code=status.HTTP_201_CREATED)
+async def addPersonalTask(projectID: str,request : AddPersonalTaskRequest,userID: str = Depends(statusProtected)):
+    try:
+        task = request.dict()
+        if not isDateCorrect(task["deadline"]):
+            return badRequestError("Invalid date format")
+        taskID = str(uuid.uuid4())
+        task["id"] = taskID
+        task["status"] = TaskState.NEW
+        task["assignee"] = userID
+        # Create / Add a new task to the tasks collection
+        db.collection("projects").document(projectID).collection("tasks").document(taskID).set(task)
+
+        return {"success" : True, "task" : task}
 
     except Exception as e:
         return {"success" : False, "message" : str(e)}

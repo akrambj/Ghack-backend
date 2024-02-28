@@ -7,6 +7,9 @@ def formatUser(id):
     del user["password"]
     return user
 
+def emailFromId(id):
+    return db.collection("users").document(id).get().to_dict()["email"]
+
 def extractStatus(project,userID):
     if project["owner"] == userID:
         return "OWNER"
