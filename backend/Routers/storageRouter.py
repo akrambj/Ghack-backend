@@ -6,6 +6,7 @@ from Core.Shared.Database import Database , db
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
+from Core.Shared.ErrorResponses import *
 from Core.env import TEMP_FILES_DIRECTORY
 from starlette.responses import JSONResponse
 from fastapi import UploadFile
@@ -14,9 +15,12 @@ import uuid
 
 storageRouter = APIRouter()
 
-@storageRouter.post("/public", status_code=status.HTTP_201_CREATED)
-async def storeInPublicStorage(file: UploadFile = File(...), userID: str = Depends(statusProtected)):
+@storageRouter.post("/{state}", status_code=status.HTTP_201_CREATED)
+async def storeInPublicStorage(projectID : str,state : str,file: UploadFile = File(...), userID: str = Depends(statusProtected)):
     try:
+
+        if (state != "public" and state != "private"):
+            return badRequestError("State shuld be 'public' or 'private'")
         # Actual timestamp (integer)
         time = int(datetime.now().timestamp())
         fileID = str(time) + file.filename
@@ -32,8 +36,22 @@ async def storeInPublicStorage(file: UploadFile = File(...), userID: str = Depen
         # Delete the file from TEMP_FILES_DIRECTORY
         os.remove(position)
 
+        file = {
+            "name" : file.filename,
+            "url" : url,
+            "owner" : userID,
+            #"description":"FEATURE_IN_DEVELOPMENT"
+        }
+
+        # insert the file to the database
+        collectionName = "publicCloud" if state == "public" else "privateCloud"
+        db.collection("projects").document(projectID).collection(collectionName).document(fileID).set(file)
+
 
         return {"success" : True, "url" : url}
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+    
+
+
     

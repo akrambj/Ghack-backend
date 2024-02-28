@@ -3,6 +3,7 @@ from Models.Requests.ProjectRequestsModels import *
 from Middlewares.authProtectionMiddlewares import statusProtected
 from Routers.tasksRouter import tasksRouter
 from Routers.storageRouter import storageRouter
+from Core.Shared.ErrorResponses import *
 from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
@@ -40,9 +41,18 @@ async def get(userID: str = Depends(statusProtected)):
 @projectsRouter.get("/{projectID}", status_code=status.HTTP_201_CREATED)
 async def getSingleProject(projectID : str,userID: str = Depends(statusProtected)):
     try:
+        # If user is not part of the project, return error
+
+
+
         project = Database.read("projects", projectID)
+
+
         if project is None:
             return {"success" : False, "message" : "Project not found"}
+        
+        if userID not in project["members"]:
+            return privilegeError("User not part of project")
         
         project["status"] = extractStatus(project,userID)
 
@@ -64,6 +74,8 @@ async def createProject(request: ProjectCreationRequest,userID: str = Depends(st
         if not isDateCorrect(data["deadline"]):
             raise Exception("Invalid date format")
         projetID = str(uuid.uuid4())
+        data["id"] = projetID
+        data["status"] = "OWNER"
         project = {
             "id": projetID,
             "name": data["name"],
@@ -78,7 +90,7 @@ async def createProject(request: ProjectCreationRequest,userID: str = Depends(st
         Database.store("projects", projetID, project)
 
 
-        return {"success" : True, "message" : "Project created successfully"}
+        return {"success" : True, "message" : "Project created successfully","project":data}
     except Exception as e:
         return {"success" : False, "message" : str(e)}
 
@@ -107,7 +119,7 @@ async def addMember(projectID: str,request: AddMemberRequest ,userID: str = Depe
         return {"success" : False, "message" : str(e)}
 
 @projectsRouter.delete("/{projectID}", status_code=status.HTTP_201_CREATED)
-async def createProject(projectID : str,userID: str = Depends(statusProtected)):
+async def deleteProject(projectID : str,userID: str = Depends(statusProtected)):
     try:
         project = Database.read("projects", projectID)
         if project is None:
