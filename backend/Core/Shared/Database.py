@@ -1,13 +1,16 @@
 import firebase_admin
 from firebase_admin import credentials,auth
 from firebase_admin import firestore
+from Core.env import *
 import json
 import os
 
 CREDENTIALS_PATH = os.path.join(os.path.dirname(__file__), "../firebase.json")
 
 cred = credentials.Certificate(CREDENTIALS_PATH)
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred,{
+        'storageBucket': STORAGE_BUCKET
+    })
 
 db = firestore.client()
 

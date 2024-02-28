@@ -9,11 +9,11 @@ def formatUser(id):
 
 def extractStatus(project,userID):
     if project["owner"] == userID:
-        project["status"] = "OWNER"
+        return "OWNER"
     elif project["manager"] == userID:
-        project["status"] = "MANAGER"
+        return "MANAGER"
     else:
-        project["status"] = "EMPLOYEE"
+        return "EMPLOYEE"
 
 def isDateCorrect(date):
     try:
