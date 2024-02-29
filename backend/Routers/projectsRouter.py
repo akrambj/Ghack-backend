@@ -215,6 +215,29 @@ async def removeMember(projectID: str,request: deleteMemberRequest ,userID: str 
         raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+
+@projectsRouter.get("/{projectID}/statistics", status_code=status.HTTP_200_OK)
+async def getStatus(projectID : str,userID: str = Depends(statusProtected)):
+    try:
+        project = projectProtected(userID, projectID)
+        if project["owner"] != userID:
+            return privilegeError("User not authorized to view statistics")
+        tasks = db.collection("projects").document(projectID).collection("tasks").get()
+        tasks = [task.to_dict() for task in tasks]
+        numberTasks = len(tasks)
+        numberParticipants = len(project["members"])
+        publicFiles = db.collection("projects").document(projectID).collection("publicCloud").get()
+        numberFilesPublic = len(publicFiles)
+        privateFiles = db.collection("projects").document(projectID).collection("privateCloud").get()
+        numberFilesPrivate = len(privateFiles)
+        totalFiles = numberFilesPublic + numberFilesPrivate
     
+        tasks = len(tasks)
+        return {"success" : True, "statistics" : {"tasks" : numberTasks, "participants" : numberParticipants, "files" : totalFiles}}
+    except HTTPException as e:
+        raise e 
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
+
 projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
 projectsRouter.include_router(storageRouter, prefix="/{projectID}/storage", tags=["storage"])
