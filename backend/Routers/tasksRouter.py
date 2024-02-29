@@ -7,6 +7,7 @@ from Core.Shared.Utils import *
 from Core.Shared.TaskState import *
 from Core.Shared.ErrorResponses import *
 from starlette.responses import JSONResponse
+
 import uuid
 
 
@@ -15,10 +16,7 @@ tasksRouter = APIRouter()
 @tasksRouter.post("/add", status_code=status.HTTP_201_CREATED)
 async def addTask(projectID: str,request : AddTaskRequest,userID: str = Depends(statusProtected)):
     try:
-        # Check if the user is the manager of the project
-        project = Database.read("projects", projectID)
-        if project is None:
-            return badRequestError("Project not found")
+        project = projectProtected(userID, projectID)
         
         if project["manager"] != userID:
             return privilegeError("Only the manager can add tasks")
@@ -40,32 +38,29 @@ async def addTask(projectID: str,request : AddTaskRequest,userID: str = Depends(
         db.collection("projects").document(projectID).collection("tasks").document(taskID).set(task)
 
         return {"success" : True, "task" : task}
-
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
 
 @tasksRouter.get("/", status_code=status.HTTP_201_CREATED)
 def getPersonalTasks(projectID: str,userID: str = Depends(statusProtected)):
     try:
-        # Check if the project exists
-        if Database.exists("projects", projectID) == False:
-            return badRequestError("Project not found")
+        project = projectProtected(userID, projectID)
 
         tasks = db.collection("projects").document(projectID).collection("tasks").where("assignee", "==", userID).get()
 
         tasks = [task.to_dict() for task in tasks]
         return {"success" : True, "tasks" : tasks}
-
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
 @tasksRouter.delete("/{taskID}", status_code=status.HTTP_201_CREATED)
 def deleteTask(projectID: str,taskID: str,userID: str = Depends(statusProtected)):
     try:
-        # Check if the user is the manager of the project
-        project = Database.read("projects", projectID)
-        if project is None:
-            return badRequestError("Project not found")
+        project = projectProtected(userID, projectID)
         
         if project["manager"] != userID:
             return privilegeError("Only the manager can delete tasks")
@@ -80,17 +75,15 @@ def deleteTask(projectID: str,taskID: str,userID: str = Depends(statusProtected)
 
         return {"success" : True,
                 "message" : "Task deleted successfully"}
-
+    except HTTPException as e:
+        raise e
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
 @tasksRouter.put("/{taskID}", status_code=status.HTTP_201_CREATED)
 async def managerUpdateTask(projectID: str,taskID: str,request : dict,userID: str = Depends(statusProtected)):
     try:
-        # Check if the user is the manager of the project
-        project = Database.read("projects", projectID)
-        if project is None:
-            return badRequestError("Project not found")
+        project = projectProtected(userID, projectID)
         
         if project["manager"] != userID:
             return privilegeError("Only the manager can update tasks")
@@ -107,7 +100,8 @@ async def managerUpdateTask(projectID: str,taskID: str,request : dict,userID: st
         return {"success" : True,
                 "message" : "Task updated successfully",
                 }
-
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
@@ -124,9 +118,7 @@ async def userUpdateTask(projectID: str,taskID: str,request : dict,userID: str =
         if status not in TaskState.__dict__.values():
             return badRequestError("Invalid status , should be [NEW,PRODUCT_BACKLOG,SPRINT_BACKLOG,IN_PROGRESS,IN_REVIEW,DONE]")
         # Check if the user is the manager of the project
-        project = Database.read("projects", projectID)
-        if project is None:
-            return badRequestError("Project not found")
+        project = projectProtected(userID, projectID)
         
         task = db.collection("projects").document(projectID).collection("tasks").document(taskID).get()
         if not task.exists:
@@ -143,7 +135,8 @@ async def userUpdateTask(projectID: str,taskID: str,request : dict,userID: str =
         return {"success" : True,
                 "message" : "Task updated successfully",
                 }
-
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
@@ -151,9 +144,7 @@ async def userUpdateTask(projectID: str,taskID: str,request : dict,userID: str =
 async def managerGetUserTasks(projectID:str,userMail: str,userID: str = Depends(statusProtected)):
     try:
         # Check if the user is the manager of the project
-        project = Database.read("projects", projectID)
-        if project is None:
-            return badRequestError("Project does not exist")
+        project = projectProtected(userID, projectID)
         if project["manager"] != userID:
             return privilegeError("Only the manager can view tasks")
         
@@ -169,7 +160,8 @@ async def managerGetUserTasks(projectID:str,userMail: str,userID: str = Depends(
 
         tasks = [task.to_dict() for task in tasks]
         return {"success" : True, "tasks" : tasks}
-
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
@@ -177,6 +169,9 @@ async def managerGetUserTasks(projectID:str,userMail: str,userID: str = Depends(
 @tasksRouter.post("/", status_code=status.HTTP_201_CREATED)
 async def addPersonalTask(projectID: str,request : AddPersonalTaskRequest,userID: str = Depends(statusProtected)):
     try:
+
+        project = projectProtected(userID, projectID)
+
         task = request.dict()
         if not isDateCorrect(task["deadline"]):
             return badRequestError("Invalid date format")
@@ -188,6 +183,7 @@ async def addPersonalTask(projectID: str,request : AddPersonalTaskRequest,userID
         db.collection("projects").document(projectID).collection("tasks").document(taskID).set(task)
 
         return {"success" : True, "task" : task}
-
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}

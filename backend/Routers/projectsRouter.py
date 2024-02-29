@@ -32,6 +32,9 @@ async def get(userID: str = Depends(statusProtected)):
                 members.append(formatUser(member))
             project["members"] = members
 
+            del project['manager']
+            del project['owner']
+
 
         return {"success" : True, "projects" : projects}
 
@@ -41,29 +44,28 @@ async def get(userID: str = Depends(statusProtected)):
 @projectsRouter.get("/{projectID}", status_code=status.HTTP_201_CREATED)
 async def getSingleProject(projectID : str,userID: str = Depends(statusProtected)):
     try:
-        # If user is not part of the project, return error
 
-
-
-        project = Database.read("projects", projectID)
-
-
-        if project is None:
-            return {"success" : False, "message" : "Project not found"}
-        
-        if userID not in project["members"]:
-            return privilegeError("User not part of project")
+        project = projectProtected(userID, projectID)
         
         project["status"] = extractStatus(project,userID)
 
         # Get members information
         members = []
         for member in project["members"]:
-            members.append(formatUser(member))
+            formattedUser = formatUser(member)
+            del formattedUser["id"]
+            members.append(formattedUser)
         project["members"] = members
+
+        managerMail = emailFromId(project["manager"])
+        ownerMail = emailFromId(project["owner"])
+
+        project["manager"] = managerMail
+        project["owner"] = ownerMail
         
         return {"success" : True, "project" : project}
-
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
 
@@ -80,6 +82,9 @@ async def createProject(request: ProjectCreationRequest,userID: str = Depends(st
         if len(managerID) == 0:
             return badRequestError("Manager not found")
         managerID = managerID[0].to_dict()["id"]
+
+        if managerID == userID:
+            return badRequestError("User cannot be manager of his own project")
 
         project = {
             "id": projetID,
@@ -115,42 +120,58 @@ async def addMember(projectID: str,request: AddMemberRequest ,userID: str = Depe
         user = user[0].to_dict()
         userID = user["id"]
         project = Database.read("projects", projectID)
+        if userID in project["members"]:
+            return badRequestError("User already in project")
         if project is None:
             return badRequestError("Project not found")
-        if userID in project["members"]:
-            project["members"].remove(userID)
 
-        project["members"].append(userID)
-        if data["status"] == "MANAGER":
-            project["manager"] = userID
-        Database.store("projects", projectID, project)
-        return {"success" : True, "message" : "User added to project"}
+        # Create an invitation
+        invitationID = projectID
+        projectMembersId = project["members"]
+        projectMembers = []
+        for member in projectMembersId:
+            projectMembers.append(emailFromId(member))
+
+        invitation = {
+            'invitationID': invitationID,
+            'projectName' : project["name"],
+            'projectID' : projectID,
+            'status':data["status"],
+            'deadline':project["deadline"],
+            'members':projectMembers,
+            'destination':userID
+            }
+        
+        db.collection("users").document(userID).collection("invitations").document(invitationID).set(invitation)
+        return {"success" : True, "message" : "Invitation sent successfully"}
+
+
+
     
     except Exception as e:
         return {"success" : False, "message" : str(e)}
 
-@projectsRouter.delete("/{projectID}", status_code=status.HTTP_201_CREATED)
+@projectsRouter.delete("/{projectID}", status_code=status.HTTP_200_OK)
 async def deleteProject(projectID : str,userID: str = Depends(statusProtected)):
     try:
-        project = Database.read("projects", projectID)
-        if project is None:
-            return {"success" : False, "message" : "Project not found"}
+        project = projectProtected(userID, projectID)
 
         if userID == project["owner"]:
             Database.delete("projects", projectID)
             return {"success" : True, "message" : "Project deleted successfully"}
         else:
             return {"success" : False, "message" : "User not authorized to delete project"}
-    
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
-@projectsRouter.get("/status/{projectID}", status_code=status.HTTP_201_CREATED)
+@projectsRouter.get("/status/{projectID}", status_code=status.HTTP_200_OK)
 async def userStatus(projectID : str,userID: str = Depends(statusProtected)):
     try:
-        project = Database.read("projects", projectID)
-        if project is None:
-            return {"success" : False, "message" : "Project not found"}
+        
+        project = projectProtected(userID, projectID)
+
         
         if userID == project["owner"]:
             return {"success" : True, "status" : "OWNER"}
@@ -159,21 +180,29 @@ async def userStatus(projectID : str,userID: str = Depends(statusProtected)):
         elif userID in project["members"]:
             return {"success" : True, "status" : "EMPLOYEE"}
         return {"success" : False, "message" : "User not found in project"}
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
-@projectsRouter.delete("/members/{projectID}", status_code=status.HTTP_201_CREATED)
+@projectsRouter.delete("/members/{projectID}", status_code=status.HTTP_200_OK)
 async def removeMember(projectID: str,request: deleteMemberRequest ,userID: str = Depends(statusProtected)):
     try:
+        
+        project = projectProtected(userID, projectID)
+
+        
+        if project["owner"] != userID and project["manager"] != userID:
+            return privilegeError("User not authorized to remove members")
+        
+
         data = request.dict()
         user = db.collection("users").where("email", "==", data["email"].lower()).get()
         if len(user) == 0:
             return {"success" : False, "message" : "User not found"}
         user = user[0].to_dict()
         userID = user["id"]
-        project = Database.read("projects", projectID)
-        if project is None:
-            return badRequestError("Project not found")
+
         if userID in project["members"]:
             if userID == project["owner"]:
                 return badRequestError("Owner cannot be removed from project")
@@ -182,7 +211,8 @@ async def removeMember(projectID: str,request: deleteMemberRequest ,userID: str 
             project["members"].remove(userID)
         Database.store("projects", projectID, project)
         return {"success" : True, "message" : "User removed from project"}
-    
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     

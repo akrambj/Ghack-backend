@@ -16,8 +16,10 @@ import uuid
 storageRouter = APIRouter()
 
 @storageRouter.post("/{state}", status_code=status.HTTP_201_CREATED)
-async def storeInPublicStorage(projectID : str,state : str,file: UploadFile = File(...), userID: str = Depends(statusProtected)):
+async def storeInStorage(projectID : str,state : str,file: UploadFile = File(...), userID: str = Depends(statusProtected)):
     try:
+        
+        project = projectProtected(userID, projectID)
 
         if (state != "public" and state != "private"):
             return badRequestError("State shuld be 'public' or 'private'")
@@ -47,14 +49,17 @@ async def storeInPublicStorage(projectID : str,state : str,file: UploadFile = Fi
         collectionName = "publicCloud" if state == "public" else "privateCloud"
         db.collection("projects").document(projectID).collection(collectionName).document(fileID).set(file)
 
-
         return {"success" : True, "url" : url}
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
 @storageRouter.get("/{state}", status_code=status.HTTP_201_CREATED)
-async def storeInPublicStorage(projectID : str,state : str,userID: str = Depends(statusProtected)):
+async def getFromStorage(projectID : str,state : str,userID: str = Depends(statusProtected)):
     try:
+
+        project = projectProtected(userID, projectID)
 
         if (state != "public" and state != "private"):
             return badRequestError("State shuld be 'public' or 'private'")
@@ -66,10 +71,8 @@ async def storeInPublicStorage(projectID : str,state : str,userID: str = Depends
         for file in filesList:
             del file["owner"]
         return {"success" : True, "files" : filesList}
-        
+    
+    except HTTPException as e:
+        raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
-    
-
-
-    
