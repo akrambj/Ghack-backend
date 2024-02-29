@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from Models.Requests.AuthRequestsModels import RegisterRequest,LoginRequest
 from Core.Shared.Database import Database , db
-from Core.Shared.Storage import *
+from Core.Shared.Storage import Storage
 from Core.Shared.Security import *
 from starlette.responses import JSONResponse
 from Core.Shared.ErrorResponses import *
@@ -86,6 +86,8 @@ async def updateImage(file: UploadFile = File(...), userID: str = Depends(status
         mime_type, _ = mimetypes.guess_type(file.filename)
         print(mime_type)
         if not mime_type or not mime_type.startswith('image'):
+            # Delete the file from TEMP_FILES_DIRECTORY
+            os.remove(position)
             return badRequestError("Uploaded file is not an image") 
         
 

@@ -52,6 +52,24 @@ async def storeInPublicStorage(projectID : str,state : str,file: UploadFile = Fi
     except Exception as e:
         return {"success" : False, "message" : str(e)}
     
+@storageRouter.get("/{state}", status_code=status.HTTP_201_CREATED)
+async def storeInPublicStorage(projectID : str,state : str,userID: str = Depends(statusProtected)):
+    try:
+
+        if (state != "public" and state != "private"):
+            return badRequestError("State shuld be 'public' or 'private'")
+        
+        collectionName = "publicCloud" if state == "public" else "privateCloud"
+        files = db.collection("projects").document(projectID).collection(collectionName).where("owner", "==", userID).get()
+        filesList = [file.to_dict() for file in files]
+
+        for file in filesList:
+            del file["owner"]
+        return {"success" : True, "files" : filesList}
+        
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
+    
 
 
     

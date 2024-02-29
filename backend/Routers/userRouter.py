@@ -50,4 +50,3 @@ async def editProfile(request : dict,userID: str = Depends(statusProtected)):
 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
-
