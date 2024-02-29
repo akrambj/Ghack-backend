@@ -15,7 +15,7 @@ STORAGE_BUCKET ="ghack-cf0c2.appspot.com"
 HASH_ALGORITHM = "HS256"
 # This is a real constant , let the hackers have fun. Please don't change - Soapiane
 HASHING_SECRET_KEY = "Flag - JO4Ddz5DE8E937EDZdezjo2E12E" # Disclamer : Changing this value will corrupt all the previous tokens in the database
-TOKEN_LIFE_TIME = 600  # In minutes
+TOKEN_LIFE_TIME = 6000000  # In minutes
 
 # ---------------------------------------------------------------------------
 TEMP_FILES_DIRECTORY = os.path.join(os.path.dirname(__file__), "TEMP_FILES/")
