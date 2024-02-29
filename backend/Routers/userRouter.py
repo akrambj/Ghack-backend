@@ -50,3 +50,45 @@ async def editProfile(request : dict,userID: str = Depends(statusProtected)):
 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+    
+@userRouter.get("/invitations", status_code=status.HTTP_200_OK)
+async def getInvitations(userID: str = Depends(statusProtected)):
+    try:
+        invitations = db.collection("users").document(userID).collection("invitations").get()
+        invitations = [invitation.to_dict() for invitation in invitations]
+        return {"success" : True, "invitations" : invitations}
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
+    
+@userRouter.post("/invitations/{invitationID}", status_code=status.HTTP_201_CREATED)
+async def acceptInvitation(invitationID: str,userID: str = Depends(statusProtected)):
+    try:
+        invitation = db.collection("users").document(userID).collection("invitations").document(invitationID).get()
+        invitation = invitation.to_dict()
+
+        if invitation is None:
+            return badRequestError("Invitation not found")
+        if invitation["destination"] != userID:
+            return privilegeError("User not authorized to accept this invitation")
+
+        projectID = invitation["projectID"]
+        project = Database.read("projects", projectID)
+        project["members"].append(userID)
+        if invitation["status"] == "MANAGER":
+            project["manager"] = userID
+        Database.store("projects", projectID, project)
+        return {"success" : True, "message" : "User added to project"}
+    
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}
+    
+@userRouter.delete("/invitations/{invitationID}", status_code=status.HTTP_200_OK)
+async def declineInvitation(invitationID: str,userID: str = Depends(statusProtected)):
+    try:
+        if not db.collection("users").document(userID).collection("invitations").document(invitationID).get().exists:
+            return badRequestError("Invitation not found")
+
+        db.collection("users").document(userID).collection("invitations").document(invitationID).delete()
+        return {"success" : True, "message" : "Invitation declined"}
+    except Exception as e:
+        return {"success" : False, "message" : str(e)}

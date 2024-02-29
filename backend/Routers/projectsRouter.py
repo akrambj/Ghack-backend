@@ -120,18 +120,33 @@ async def addMember(projectID: str,request: AddMemberRequest ,userID: str = Depe
         user = user[0].to_dict()
         userID = user["id"]
         project = Database.read("projects", projectID)
-        if project["owner"] == userID:
-            return badRequestError("User is already the owner of the project")
+        if userID in project["members"]:
+            return badRequestError("User already in project")
         if project is None:
             return badRequestError("Project not found")
-        if userID in project["members"]:
-            project["members"].remove(userID)
 
-        project["members"].append(userID)
-        if data["status"] == "MANAGER":
-            project["manager"] = userID
-        Database.store("projects", projectID, project)
-        return {"success" : True, "message" : "User added to project"}
+        # Create an invitation
+        invitationID = projectID
+        projectMembersId = project["members"]
+        projectMembers = []
+        for member in projectMembersId:
+            projectMembers.append(emailFromId(member))
+
+        invitation = {
+            'invitationID': invitationID,
+            'projectName' : project["name"],
+            'projectID' : projectID,
+            'status':data["status"],
+            'deadline':project["deadline"],
+            'members':projectMembers,
+            'destination':userID
+            }
+        
+        db.collection("users").document(userID).collection("invitations").document(invitationID).set(invitation)
+        return {"success" : True, "message" : "Invitation sent successfully"}
+
+
+
     
     except Exception as e:
         return {"success" : False, "message" : str(e)}

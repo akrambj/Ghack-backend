@@ -16,7 +16,7 @@ import uuid
 storageRouter = APIRouter()
 
 @storageRouter.post("/{state}", status_code=status.HTTP_201_CREATED)
-async def storeInPublicStorage(projectID : str,state : str,file: UploadFile = File(...), userID: str = Depends(statusProtected)):
+async def storeInStorage(projectID : str,state : str,file: UploadFile = File(...), userID: str = Depends(statusProtected)):
     try:
         
         project = projectProtected(userID, projectID)
@@ -56,7 +56,7 @@ async def storeInPublicStorage(projectID : str,state : str,file: UploadFile = Fi
         return {"success" : False, "message" : str(e)}
     
 @storageRouter.get("/{state}", status_code=status.HTTP_201_CREATED)
-async def storeInPublicStorage(projectID : str,state : str,userID: str = Depends(statusProtected)):
+async def getFromStorage(projectID : str,state : str,userID: str = Depends(statusProtected)):
     try:
 
         project = projectProtected(userID, projectID)
