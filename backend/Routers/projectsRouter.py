@@ -9,6 +9,8 @@ from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from starlette.responses import JSONResponse
 import uuid
+from livekit import api
+from fastapi import status
 
 
 projectsRouter = APIRouter()
@@ -238,6 +240,39 @@ async def getStatus(projectID : str,userID: str = Depends(statusProtected)):
         raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+    
+
+
+
+
+
+
+@projectsRouter.get("/{projectID}/chatrooms", status_code=status.HTTP_200_OK)
+async def getChatrooms(projectID : str,userID: str = Depends(statusProtected) ):
+    try:
+
+        user = Database.read("users", userID)
+        
+        username = user["lastName"]+" "+user["firstName"]
+
+        chatRooms = {
+            "privateReunion1" : projectID+"privateReunion1",
+            "privateReunion2" : projectID+"privateReunion2",
+            "directionRoom" :projectID+"directionRoom",
+            "restSpace" : projectID+"restSpace",
+            "workSpace" : projectID+"workSpace",
+            "meetingRoom" : projectID+"meetingRoom"
+        }
+
+        for key in chatRooms:
+            chatRooms[key] = generateChatroomToken(username,username,chatRooms[key])
+        
+        return {"success" : True, "chatroomsTokens" : chatRooms}
+
+
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
 
 projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
 projectsRouter.include_router(storageRouter, prefix="/{projectID}/storage", tags=["storage"])
