@@ -45,3 +45,10 @@ class Database:
     def exists(collection,document):
         doc_ref = db.collection(collection).document(document)
         return doc_ref.get().exists
+
+    @staticmethod
+    def userByEmail(email):
+        result = db.collection("users").where("email", "==", email.lower()).get()
+        if len(result) == 0:
+            return None
+        return result[0].to_dict()
