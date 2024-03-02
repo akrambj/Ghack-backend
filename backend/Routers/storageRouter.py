@@ -11,8 +11,8 @@ from Core.env import TEMP_FILES_DIRECTORY
 from starlette.responses import JSONResponse
 from fastapi import UploadFile
 from fastapi import File
-from services import keyword_extraction
-from services import indexing
+from Services import keyword_extraction
+from Services import indexing
 import uuid
 
 storageRouter = APIRouter()

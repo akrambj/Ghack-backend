@@ -8,7 +8,7 @@ from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from starlette.responses import JSONResponse
-from services import indexing
+from Services import indexing
 import uuid
 from livekit import api
 from fastapi import status
