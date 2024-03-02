@@ -118,7 +118,6 @@ async def getSingleProject(projectID : str,userID: str = Depends(statusProtected
         members = []
         for member in project["members"]:
             formattedUser = formatUser(member)
-            del formattedUser["id"]
             members.append(formattedUser)
         project["members"] = members
 
