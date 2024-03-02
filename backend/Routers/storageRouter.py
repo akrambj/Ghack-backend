@@ -40,8 +40,9 @@ async def storeInStorage(projectID : str,state : str,file: UploadFile = File(...
 
         
         keywords = keyword_extraction.exctract_keyword(position)
+        print("Keywords : ",keywords)
         if keywords is not None:
-            indexing.index_document(index_name = "file_key_words", irl=url, keywords=keywords)
+            indexing.index_document(index_name = "file_key_words", url=url, keywords=keywords)
 
 
         # Delete the file from TEMP_FILES_DIRECTORY

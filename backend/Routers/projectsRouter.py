@@ -65,9 +65,10 @@ async def getStatistics(projectID: str, userID: str = Depends(statusProtected)):
                                "members": updatedMembers}}
 
 @projectsRouter.get("/files", status_code=status.HTTP_200_OK)
-async def search_files(search: str | None = None, userId :str = Depends(statusProtected)):
+async def search_files(search: str , userId :str = Depends(statusProtected)):
   try:
     index_name = "file_key_words"
+    print("Search",search)
 
     if search:
         return {"file_urls": indexing.search_documents(index_name, search)}
