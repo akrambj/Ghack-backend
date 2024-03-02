@@ -5,33 +5,37 @@ from Core.Shared.Security import decodeJwtToken
 from Controllers.virtualEnvController import connectToVirtualEnvController, leaveVirtualEnvController, onDisconnectController, updatePositionController
 
 
-socketIO = socketio.ASGIApp(sio)
+socketIO = socketio.ASGIApp(
+    socketio_server=sio,)
 
-@sio.event
-async def connect(sid, environ):
-    try:
-        print(f"Connected: {sid}")
 
-        # Extract the JWT token from the query string or headers
+# @sio.event
+# async def connect(sid, environ):
+#     print(f"Connected: {sid}")
+#     print(environ)
+    # try:
+    #     print(f"Connected: {sid}")
 
-        headers = environ.get('asgi.scope', {}).get('headers', {})
-        # Using a loop
-        token = None
-        for tpl in headers:
-            if tpl[0].decode('utf-8') == 'authentication':
-                token = tpl[1].decode('utf-8').split("Bearer ")[1] if "Bearer " in tpl[1].decode('utf-8') else tpl[1].decode('utf-8')
-                break
-        if not token:
-            raise Exception("No valid JWT token provided")  
+    #     # # Extract the JWT token from the query string or headers
 
-        # decodeJwtToken(token)
+    #     # headers = environ.get('asgi.scope', {}).get('headers', {})
+    #     # # Using a loop
+    #     # token = None
+    #     # for tpl in headers:
+    #     #     if tpl[0].decode('utf-8') == 'authentication':
+    #     #         token = tpl[1].decode('utf-8').split("Bearer ")[1] if "Bearer " in tpl[1].decode('utf-8') else tpl[1].decode('utf-8')
+    #     #         break
+    #     # if not token:
+    #     #     raise Exception("No valid JWT token provided")  
+
+    #     # decodeJwtToken(token)
         
 
-    except Exception as e:
-        # Handle any exceptions raised during JWT decoding or validation
-        await sio.disconnect(sid)
-        print(f"Connection rejected: {e}")
-        return Exception("Connection rejected: " + str(e))
+    # except Exception as e:
+    #     # Handle any exceptions raised during JWT decoding or validation
+    #     await sio.disconnect(sid)
+    #     print(f"Connection rejected: {e}")
+    #     return Exception("Connection rejected: " + str(e))
 
 @sio.event
 async def disconnect(sid):
