@@ -1,9 +1,18 @@
 from fastapi import APIRouter, status, Depends
 from Models.Requests.AuthRequestsModels import RegisterRequest,LoginRequest
 from Core.Shared.Database import Database , db
+from Core.Shared.Storage import Storage
 from Core.Shared.Security import *
 from starlette.responses import JSONResponse
+from Core.Shared.ErrorResponses import *
+from datetime import datetime
+from Middlewares.authProtectionMiddlewares import *
+from fastapi import UploadFile
+from fastapi import File
+from Core.env import TEMP_FILES_DIRECTORY
+import os
 import uuid
+import mimetypes
 
 
 authRouter = APIRouter()
@@ -31,7 +40,10 @@ async def register_user(request: RegisterRequest):
             "firstName": data["firstName"],
             "lastName": data["lastName"],
             "email": data["email"].lower(),
-            "password": hashPassword(data["password"])
+            "password": hashPassword(data["password"]),
+            "color": 0,
+            "imageSrc": "https://storage.googleapis.com/ghack-cf0c2.appspot.com/1709157923Group%201000003516.png",
+
         }
 
         Database.store("users", user["id"], user)
@@ -51,6 +63,8 @@ async def register_user(request: RegisterRequest):
 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+
+
 
 @authRouter.post("/login", status_code=status.HTTP_201_CREATED)
 async def login_user(request: LoginRequest):

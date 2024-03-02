@@ -5,6 +5,7 @@ from typing import Optional
 import jwt
 from fastapi import  HTTPException ,status
 from Core.env import HASHING_SECRET_KEY, HASH_ALGORITHM, TOKEN_LIFE_TIME
+from base64 import b64decode
 
 
 def hashPassword(password: str):
