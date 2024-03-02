@@ -8,11 +8,20 @@ from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from starlette.responses import JSONResponse
+from services import indexing
 import uuid
 
 
 projectsRouter = APIRouter()
 
+
+@projectsRouter.get("/files", status_code=status.HTTP_200_OK)
+async def search_files(search: str | None = None, userId :str = Depends(statusProtected)):
+    index_name = "file_key_words"
+    print(search)
+    if search:
+        return {"file_urls": indexing.search_documents(index_name, search)}
+    return badRequestError("no query has been provided!")
 
 @projectsRouter.get("/", status_code=status.HTTP_201_CREATED)
 async def get(userID: str = Depends(statusProtected)):
@@ -238,6 +247,10 @@ async def getStatus(projectID : str,userID: str = Depends(statusProtected)):
         raise e 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+
+
+
+
 
 projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
 projectsRouter.include_router(storageRouter, prefix="/{projectID}/storage", tags=["storage"])
