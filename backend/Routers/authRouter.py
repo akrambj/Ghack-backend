@@ -34,11 +34,6 @@ async def register_user(request: RegisterRequest):
                 "message" : "Email already exists"
             }
         
-        color = data["color"]
-
-        if color < 0 or color > 5:
-            return badRequestError("Color should be between 0 and 5")
-        
         
         user = {
             "id": str(uuid.uuid4()),
@@ -46,7 +41,7 @@ async def register_user(request: RegisterRequest):
             "lastName": data["lastName"],
             "email": data["email"].lower(),
             "password": hashPassword(data["password"]),
-            "color": data["color"],
+            "color": 0,
             "imageSrc": "https://storage.googleapis.com/ghack-cf0c2.appspot.com/1709157923Group%201000003516.png",
 
         }
@@ -69,45 +64,7 @@ async def register_user(request: RegisterRequest):
     except Exception as e:
         return {"success" : False, "message" : str(e)}
 
-@authRouter.post("/updateImage", status_code=status.HTTP_201_CREATED)
-async def updateImage(file: UploadFile = File(...), userID: str = Depends(statusProtected)):
-    try:
-        time = int(datetime.now().timestamp())
-        fileID = str(time) + file.filename
 
-        # Store the file to TEMP_FILES_DIRECTORY
-        position = TEMP_FILES_DIRECTORY + fileID
-
-        #Check if yje file is an image
-        with open(position, "wb") as file_object:
-            file_object.write(file.file.read()) 
-
-        # Check if the file is an image
-        mime_type, _ = mimetypes.guess_type(file.filename)
-        print(mime_type)
-        if not mime_type or not mime_type.startswith('image'):
-            # Delete the file from TEMP_FILES_DIRECTORY
-            os.remove(position)
-            return badRequestError("Uploaded file is not an image") 
-        
-
-
-        f = open(position, 'rb')
-        # Store the file to the storage
-        url = Storage.store(f, fileID)
-        f.close()
-        # Delete the file from TEMP_FILES_DIRECTORY
-        os.remove(position)
-        
-        user = Database.read("users", userID)
-        if user is None:
-            return badRequestError("User not found")
-        user["image"] = url
-        Database.edit("users", userID, user)
-
-        return {"success" : True, "imageSrc" : url}
-    except Exception as e:
-        return {"success" : False, "message" : str(e)}
 
 @authRouter.post("/login", status_code=status.HTTP_201_CREATED)
 async def login_user(request: LoginRequest):

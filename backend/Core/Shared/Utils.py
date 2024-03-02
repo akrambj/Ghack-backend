@@ -4,6 +4,8 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi import status
 from Core.Shared.ErrorResponses import *
 from Core.env import HASHING_SECRET_KEY, HASH_ALGORITHM
+from Core.env import LIVEKIT_API_KEY,LIVEKIT_API_SECRET
+from livekit import api
 
 def formatUser(id):
     user = db.collection("users").document(id).get().to_dict()
@@ -51,3 +53,13 @@ def projectProtected(userID, projectID):
     if userID not in project["members"]:
         raise privilege_error
     return project
+
+def generateChatroomToken(identity,name,roomId):
+    token = api.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET) \
+            .with_identity(identity) \
+            .with_name(name) \
+            .with_grants(api.VideoGrants(
+            room_join=True,
+            room=roomId,
+        ))
+    return  token.to_jwt()

@@ -19,3 +19,6 @@ TOKEN_LIFE_TIME = 6000000  # In minutes
 
 # ---------------------------------------------------------------------------
 TEMP_FILES_DIRECTORY = os.path.join(os.path.dirname(__file__), "TEMP_FILES/")
+# ---------------------------------------------------------------------------
+LIVEKIT_API_KEY="APICpxgswzJsjYJ"
+LIVEKIT_API_SECRET="4WjdhtyCYecetCFjquzhRhoSUfMKzOqeTYjEGz4oRsZB"
