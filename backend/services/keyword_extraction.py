@@ -8,9 +8,9 @@ import json
 import requests
 import os
 
+UserName="AZIZAISSA"
+LicenseCode="F1DEF76B-F860-4E22-BCF9-AB01A85C654A"
 
-LicenseCode = os.environ.get("LICENSECODE")
-UserName =  os.environ.get("USERNAME")
 RequestUrl = "http://www.ocrwebservice.com/restservices/processDocument?gettext=true";
 
 
@@ -66,6 +66,7 @@ def exctract_keyword(filepath):
         
         list =  kw_model.extract_keywords(doc,keyphrase_ngram_range=(3, 3), stop_words='english',
                                   use_maxsum=True, diversity=0.7)
+        print(list)
         
         return [item[0] for item in list ]
     except: 
