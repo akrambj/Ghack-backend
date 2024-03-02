@@ -11,6 +11,8 @@ from Core.env import TEMP_FILES_DIRECTORY
 from starlette.responses import JSONResponse
 from fastapi import UploadFile
 from fastapi import File
+from services import keyword_extraction
+from services import indexing
 import uuid
 
 storageRouter = APIRouter()
@@ -35,6 +37,13 @@ async def storeInStorage(projectID : str,state : str,file: UploadFile = File(...
         # Store the file to the storage
         url = Storage.store(f, fileID)
         f.close()
+
+        
+        keywords = keyword_extraction.exctract_keyword(position)
+        if keywords is not None:
+            indexing.index_document(index_name = "file_key_words", irl=url, keywords=keywords)
+
+
         # Delete the file from TEMP_FILES_DIRECTORY
         os.remove(position)
 

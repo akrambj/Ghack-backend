@@ -8,6 +8,7 @@ from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from starlette.responses import JSONResponse
+from services import indexing
 import uuid
 from livekit import api
 from fastapi import status
@@ -63,13 +64,18 @@ async def getStatistics(projectID: str, userID: str = Depends(statusProtected)):
                 "statistics": {"tasks": numberTasks, "participants": numberParticipants, "files": totalFiles,
                                "members": updatedMembers}}
 
-        tasks = len(tasks)
-        return {"success": True,
-                "statistics": {"tasks": numberTasks, "participants": numberParticipants, "files": totalFiles}}
-    #except HTTPException as e:
-    #    raise e
-    #except Exception as e:
-    #    return {"success": False, "message": str(e)}
+@projectsRouter.get("/files", status_code=status.HTTP_200_OK)
+async def search_files(search: str | None = None, userId :str = Depends(statusProtected)):
+  try:
+    index_name = "file_key_words"
+
+    if search:
+        return {"file_urls": indexing.search_documents(index_name, search)}
+    return badRequestError("no query has been provided!")
+
+  except Exception as e:
+        return {"success": False, "message": str(e)}
+
 @projectsRouter.get("/", status_code=status.HTTP_201_CREATED)
 async def get(userID: str = Depends(statusProtected)):
     
@@ -308,6 +314,10 @@ async def getChatrooms(projectID : str,userID: str = Depends(statusProtected) ):
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+
+
 
 
 
