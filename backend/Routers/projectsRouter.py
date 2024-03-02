@@ -15,7 +15,61 @@ from fastapi import status
 
 projectsRouter = APIRouter()
 
+@projectsRouter.get("/statistics/{projectID}", status_code=status.HTTP_200_OK)
+async def getStatistics(projectID: str, userID: str = Depends(statusProtected)):
+    #try:
+        project = projectProtected(userID, projectID)
+        if project["owner"] != userID:
+            return privilegeError("User not authorized to view statistics")
+        tasks = db.collection("projects").document(projectID).collection("tasks").get()
+        tasks = [task.to_dict() for task in tasks]
+        numberTasks = len(tasks)
+        numberParticipants = len(project["members"])
+        publicFiles = db.collection("projects").document(projectID).collection("publicCloud").get()
+        numberFilesPublic = len(publicFiles)
+        privateFiles = db.collection("projects").document(projectID).collection("privateCloud").get()
+        numberFilesPrivate = len(privateFiles)
+        totalFiles = numberFilesPublic + numberFilesPrivate
 
+        members = project["members"]
+        print(members)
+        # Extract the status , number of tasks and number of files from each member
+        updatedMembers = []
+        for member in members:
+            # Extarct number of tasks done by member
+            member = db.collection("users").document(member).get().to_dict()
+            del member["password"]
+            member["email"] = emailFromId(member["id"])
+            memberTasks = db.collection("projects").document(projectID).collection("tasks").where("assignee", "==", member).where("status", "==", "DONE").get()
+            member["nbTasks"] = len(memberTasks)
+            # Extract number of files uploaded by member
+            memberPublicFiles = db.collection("projects").document(projectID).collection("publicCloud").where("owner",
+                                                                                                              "==",
+                                                                                                              member).get()
+            memberPrivateFiles = db.collection("projects").document(projectID).collection("privateCloud").where("owner",
+                                                                                                                "==",
+                                                                                                                member).get()
+            member["nbTotalFiles"] = len(memberPublicFiles) + len(memberPrivateFiles)
+            if member["id"] == project["manager"]:
+                member["status"] = "MANAGER"
+            elif member["id"] == project["owner"]:
+                member["status"] = "OWNER"
+            else:
+                member["status"] = "EMPLOYEE"
+
+            updatedMembers.append(member)
+
+        return {"success": True,
+                "statistics": {"tasks": numberTasks, "participants": numberParticipants, "files": totalFiles,
+                               "members": updatedMembers}}
+
+        tasks = len(tasks)
+        return {"success": True,
+                "statistics": {"tasks": numberTasks, "participants": numberParticipants, "files": totalFiles}}
+    #except HTTPException as e:
+    #    raise e
+    #except Exception as e:
+    #    return {"success": False, "message": str(e)}
 @projectsRouter.get("/", status_code=status.HTTP_201_CREATED)
 async def get(userID: str = Depends(statusProtected)):
     
@@ -42,6 +96,8 @@ async def get(userID: str = Depends(statusProtected)):
 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
+
+
 
 @projectsRouter.get("/{projectID}", status_code=status.HTTP_201_CREATED)
 async def getSingleProject(projectID : str,userID: str = Depends(statusProtected)):
@@ -218,28 +274,7 @@ async def removeMember(projectID: str,request: deleteMemberRequest ,userID: str 
     except Exception as e:
         return {"success" : False, "message" : str(e)}
 
-@projectsRouter.get("/{projectID}/statistics", status_code=status.HTTP_200_OK)
-async def getStatus(projectID : str,userID: str = Depends(statusProtected)):
-    try:
-        project = projectProtected(userID, projectID)
-        if project["owner"] != userID:
-            return privilegeError("User not authorized to view statistics")
-        tasks = db.collection("projects").document(projectID).collection("tasks").get()
-        tasks = [task.to_dict() for task in tasks]
-        numberTasks = len(tasks)
-        numberParticipants = len(project["members"])
-        publicFiles = db.collection("projects").document(projectID).collection("publicCloud").get()
-        numberFilesPublic = len(publicFiles)
-        privateFiles = db.collection("projects").document(projectID).collection("privateCloud").get()
-        numberFilesPrivate = len(privateFiles)
-        totalFiles = numberFilesPublic + numberFilesPrivate
-    
-        tasks = len(tasks)
-        return {"success" : True, "statistics" : {"tasks" : numberTasks, "participants" : numberParticipants, "files" : totalFiles}}
-    except HTTPException as e:
-        raise e 
-    except Exception as e:
-        return {"success" : False, "message" : str(e)}
+
     
 
 
@@ -273,6 +308,9 @@ async def getChatrooms(projectID : str,userID: str = Depends(statusProtected) ):
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+
 
 projectsRouter.include_router(tasksRouter, prefix="/{projectID}/tasks", tags=["tasks"])
 projectsRouter.include_router(storageRouter, prefix="/{projectID}/storage", tags=["storage"])
